@@ -7,6 +7,8 @@
 # General application configuration
 import Config
 
+config :elixir, ansi_enabled: true
+
 config :elixir_react_framework,
   ecto_repos: [ElixirReactFramework.Repo],
   generators: [timestamp_type: :utc_datetime]

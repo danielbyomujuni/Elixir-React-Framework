@@ -72,7 +72,8 @@ defmodule ElixirReactFramework.MixProject do
       "assets.install": ["cmd (cd assets && yarn install)"],
       "assets.tsc": ["cmd (cd assets && yarn run tsc)"],
       "setup.pipeline": ["deps.get --force", "ecto.setup --force", "assets.install", "assets.tsc"],
-      "assets.deploy": ["cmd --cd assets yarn run build", "phx.digest"]
+      "assets.deploy": ["cmd --cd assets yarn run build", "phx.digest"],
+      "assets.test": ["cmd --cd assets yarn run test"],
     ]
   end
 end
