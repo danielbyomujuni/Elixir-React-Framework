@@ -12,8 +12,6 @@ attach_script_to_tag:
     - echo "📦 Uploading create_project.exs for tag $CI_COMMIT_TAG"
     - curl --request POST --header "PRIVATE-TOKEN: $GITLAB_TOKEN" --form "file=@priv/scripts/create_project.exs" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/uploads" | tee upload.json
     - FILE_URL=$(jq -r .url upload.json)
-    - FULL_URL="${CI_PROJECT_URL}${FILE_URL}"
     - echo "✅ Script uploaded successfully!"
-    - echo "🔗 Download URL: $FULL_URL"
-    - echo "🏷️  Associated with tag: $CI_COMMIT_TAG"
-    - 'curl --request POST --header "PRIVATE-TOKEN: $GITLAB_TOKEN" --header "Content-Type: application/json" --data "{\"note\": \"📦 Project template script: $FULL_URL\"}" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/repository/tags/${CI_COMMIT_TAG}/notes" || echo "Could not add tag note"'
+    - echo "🔗 Download URL: ${CI_PROJECT_URL}${FILE_URL}"
+    - echo "🏷️ Associated with tag: $CI_COMMIT_TAG"
