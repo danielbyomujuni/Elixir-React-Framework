@@ -57,6 +57,12 @@ defmodule CreateProject do
     git_dir = Path.join(project_path, ".git")
     if File.dir?(git_dir), do: File.rm_rf!(git_dir)
 
+    # ✅ Remove GitLab pipeline file if it exists
+    pipeline_file = Path.join(project_path, ".gitlab-ci.yml")
+    if File.exists?(pipeline_file) do
+      File.rm!(pipeline_file)
+    end
+
     IO.puts("✅ Project #{new_name} generated successfully!")
   end
 
