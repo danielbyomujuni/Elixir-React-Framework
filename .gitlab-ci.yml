@@ -9,7 +9,7 @@ release_project_script:
   script:
     - echo "Attaching priv/scripts/create_project.exs to release $CI_COMMIT_TAG"
     - apk add curl
-    - apk add wget
+    - apk add jq
     # Create a release if it doesn't exist, or update if it does
     - |
       curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
