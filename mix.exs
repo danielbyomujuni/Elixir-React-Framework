@@ -74,6 +74,7 @@ defmodule ElixirReactFramework.MixProject do
       "setup.pipeline": ["deps.get --force", "ecto.setup --force", "assets.install", "assets.tsc"],
       "assets.deploy": ["cmd --cd assets yarn run build", "phx.digest"],
       "assets.test": ["cmd --cd assets yarn run test"],
+      shadcn: ["cmd --cd assets npx shadcn@latest"]
     ]
   end
 end

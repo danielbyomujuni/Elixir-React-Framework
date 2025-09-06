@@ -2,7 +2,7 @@ import Config
 
 # Configure your database
 config :elixir_react_framework, ElixirReactFramework.Repo,
-  username: "danielbyomujuni",
+  username: "postgres",
   password: "postgres",
   hostname: "localhost",
   database: "elixir_react_framework_dev",
