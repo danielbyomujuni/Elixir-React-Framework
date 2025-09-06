@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:17.5
+    env_file: ./prod.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - /srv/elixir_react_framework/db:/var/lib/postgresql/data
+    ports:
+      - '5009:5432'
+    networks:
+      - elixir_react_framework_stack
+
+  main:
+    image: registry.gitlab.nekosyndicate.com/neko-syndicate/elixir-react-framework:latest
+    env_file: ./prod.env
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRES_HOST=postgres
+      - AUTH_TRUST_HOST=true
+      - HOST_NAME=https://vault.nekosyndicate.com
+    ports:
+      - '5008:4000'
+    networks:
+      - elixir_react_framework_stack
+networks:
+  elixir_react_framework_stack:
+    name: elixir_react_framework_stack
+    driver: overlay
