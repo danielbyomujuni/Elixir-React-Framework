@@ -6,20 +6,24 @@ release_project_script:
   image: alpine:latest
   rules:
     - if: $CI_COMMIT_TAG   # only run on tags
+  before_script:
+    - apk add --no-cache curl jq
   script:
-    - echo "Attaching priv/scripts/create_project.exs to release $CI_COMMIT_TAG"
-    - apk add curl
-    - apk add jq
-    # Create a release if it doesn't exist, or update if it does
+    - echo "📦 Attaching priv/scripts/create_project.exs to release $CI_COMMIT_TAG"
+
+    # Upload file to GitLab project uploads API
     - |
-      curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-        --upload-file priv/scripts/create_project.exs \
+      curl --request POST \
+        --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+        --form "file=@priv/scripts/create_project.exs" \
         "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/uploads" \
         | tee upload.json
     - FILE_URL=$(jq -r .url upload.json)
+
+    # Create or update release with asset link
     - |
       curl --request POST \
-        --header "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
+        --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
         --header "Content-Type: application/json" \
         --data "{
           \"name\": \"Release $CI_COMMIT_TAG\",
