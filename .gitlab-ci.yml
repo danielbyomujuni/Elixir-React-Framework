@@ -1,17 +1,17 @@
 release_job:
   stage: release
   rules:
-    - if: $CI_COMMIT_TAG                 # Run this job when a tag is created
+    - if: $CI_COMMIT_TAG
   script:
     - echo "running release_job"
   release:
-    name: 'Release $CI_COMMIT_TAG'
-    description: '' 
-    tag_name: '$CI_COMMIT_TAG'
-    ref: '$CI_COMMIT_SHA'
+    name: "Release $CI_COMMIT_TAG"
+    description: ""
+    tag_name: "$CI_COMMIT_TAG"
+    ref: "$CI_COMMIT_SHA"
     assets:
       links:
-        - name: 'main_script'
-          filepath: "/priv/scripts/create_project.exs",
-          url: "$CI_PROJECT_URL/-/blob/$CI_COMMIT_SHA/priv/scripts/create_project.exs",
+        - name: "main_script"
+          filepath: "/priv/scripts/create_project.exs"
+          url: "$CI_PROJECT_URL/-/blob/$CI_COMMIT_SHA/priv/scripts/create_project.exs"
           link_type: "other"
