@@ -12,7 +12,7 @@ experience.
 
 ---
 
-## 🔥 Tech Stack
+## ⚡ Tech Stack
 
 - **Elixir** – functional programming language for scalable, fault‑tolerant apps
 - **Phoenix Framework 1.7** – backend web framework with LiveView for real‑time UI

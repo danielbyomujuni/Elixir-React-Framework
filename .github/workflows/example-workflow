@@ -1,0 +1,354 @@
+name: CI Pipeline
+
+on:
+  push:
+  pull_request:
+
+env:
+  MIX_ENV: test
+  POSTGRES_PASSWORD: ci_pipeline_password
+  BACKEND_POSTGRES_HOST: localhost
+  POSTGRES_USER: postgres
+  POSTGRES_HOST: localhost
+  POSTGRES_PWD: ci_pipeline_password
+  POSTGRES_DATABASE: elixir_react_framework_test
+  SALT_ROUNDS: 10
+  POSTGRES_URL: "postgres://postgres:ci_pipeline_password@localhost/elixir_react_framework_test"
+
+jobs:
+  deps:
+    runs-on: ubuntu-latest
+    container:
+      image: elixir:1.18.3-alpine
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: ci_pipeline_password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: elixir_react_framework_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            _build/
+            deps/
+            assets/node_modules/
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock', 'assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      
+      - name: Install system dependencies
+        run: |
+          apk add --no-cache build-base git openssl-dev
+          apk add --no-cache nodejs npm yarn
+      
+      - name: Setup pipeline
+        run: |
+          touch testing.env.exs
+          mix setup.pipeline
+      
+      - name: Get dependencies
+        run: mix deps.get
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-deps
+          path: |
+            _build/
+            deps/
+
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: elixir:1.18.3-alpine
+    needs: deps
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: ci_pipeline_password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: elixir_react_framework_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            _build/
+            deps/
+            assets/node_modules/
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock', 'assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-deps
+      
+      - name: Install system dependencies
+        run: |
+          apk add --no-cache build-base git openssl-dev
+          apk add --no-cache nodejs npm yarn
+      
+      - name: Setup pipeline
+        run: |
+          touch testing.env.exs
+          mix setup.pipeline
+      
+      - name: Compile
+        run: mix compile
+
+  elixir-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: elixir:1.18.3-alpine
+    needs: build
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: ci_pipeline_password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: elixir_react_framework_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            _build/
+            deps/
+            assets/node_modules/
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock', 'assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-deps
+      
+      - name: Install system dependencies
+        run: |
+          apk add --no-cache build-base git openssl-dev
+          apk add --no-cache nodejs npm yarn
+      
+      - name: Setup pipeline
+        run: |
+          touch testing.env.exs
+          mix setup.pipeline
+      
+      - name: Run setup and tests
+        run: |
+          mix setup
+          mix test
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: elixir-test-results
+          path: report.xml
+
+  elixir-coverage:
+    runs-on: ubuntu-latest
+    container:
+      image: elixir:1.18.3-alpine
+    needs: build
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: ci_pipeline_password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: elixir_react_framework_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            _build/
+            deps/
+            assets/node_modules/
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock', 'assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-deps
+      
+      - name: Install system dependencies
+        run: |
+          apk add --no-cache build-base git openssl-dev
+          apk add --no-cache nodejs npm yarn
+      
+      - name: Setup pipeline
+        run: |
+          touch testing.env.exs
+          mix setup.pipeline
+      
+      - name: Run coverage
+        run: |
+          mix ecto.create --quiet
+          mix ecto.migrate --quiet
+          mix coverage
+      
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: elixir-coverage
+          path: cover/
+
+  react-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: elixir:1.18.3-alpine
+    needs: build
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: ci_pipeline_password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: elixir_react_framework_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            _build/
+            deps/
+            assets/node_modules/
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock', 'assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-deps
+      
+      - name: Install system dependencies
+        run: |
+          apk add --no-cache build-base git openssl-dev
+          apk add --no-cache nodejs npm yarn
+      
+      - name: Setup pipeline
+        run: |
+          touch testing.env.exs
+          mix setup.pipeline
+      
+      - name: Run React tests
+        run: |
+          mix setup
+          mix assets.install
+          mix assets.test
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: react-test-results
+          path: report.xml
+
+  react-coverage:
+    runs-on: ubuntu-latest
+    container:
+      image: elixir:1.18.3-alpine
+    needs: build
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: ci_pipeline_password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: elixir_react_framework_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            _build/
+            deps/
+            assets/node_modules/
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock', 'assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-deps
+      
+      - name: Install system dependencies
+        run: |
+          apk add --no-cache build-base git openssl-dev
+          apk add --no-cache nodejs npm yarn
+      
+      - name: Setup pipeline
+        run: |
+          touch testing.env.exs
+          mix setup.pipeline
+      
+      - name: Run React coverage
+        run: |
+          mix setup
+          mix assets.install
+          mix assets.coverage
+      
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: react-coverage
+          path: cover/

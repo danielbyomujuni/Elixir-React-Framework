@@ -63,6 +63,32 @@ defmodule CreateProject do
       File.rm!(pipeline_file)
     end
 
+    # ✅ Remove The script file file if it exists
+    pipeline_file = Path.join(project_path, "priv/scripts/create_project.exs")
+    if File.exists?(pipeline_file) do
+      File.rm!(pipeline_file)
+    end
+
+    # ✅ Delete GitHub create-release workflow
+    create_release_file = Path.join(project_path, ".github/workflows/create-release.yml")
+    if File.exists?(create_release_file) do
+      File.rm!(create_release_file)
+    end
+
+    # ✅ Rename GitHub example workflow to test-project
+    example_workflow = Path.join(project_path, ".github/workflows/example-workflow")
+    test_project_workflow = Path.join(project_path, ".github/workflows/test-project.yml")
+    if File.exists?(example_workflow) do
+      File.rename!(example_workflow, test_project_workflow)
+    end
+
+    # ✅ Rename example.gitlab-ci to .gitlab-ci.yml
+    example_gitlab_ci = Path.join(project_path, "example.gitlab-ci")
+    gitlab_ci_file = Path.join(project_path, ".gitlab-ci.yml")
+    if File.exists?(example_gitlab_ci) do
+      File.rename!(example_gitlab_ci, gitlab_ci_file)
+    end
+
     IO.puts("✅ Project #{new_name} generated successfully!")
   end
 
