@@ -20,7 +20,7 @@ jobs:
       - name: Get tag message
         id: tag-message
         run: |
-          TAG_MESSAGE=$(git tag -l --format='%(contents)' ${{ github.ref_name }})
+          TAG_MESSAGE="$(git tag -l --format='%(contents)' ${{ github.ref_name }}) \n to Download `curl -o create_project.exs https://github.com/${{ github.GITHUB_REPOSITORY }}/releases/download/${{ github.ref_name }}/create_project.exs`"
           echo "message=$TAG_MESSAGE" >> $GITHUB_OUTPUT
           
       - name: Create Release
